@@ -1,5 +1,9 @@
-// Backend bilan ishlash uchun yagona joy. Lokal muhitda Vite proxy (/api), prod'da VITE_API_URL ishlatiladi.
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
+// Backend bilan ishlash uchun yagona joy. Lokal muhitda Vite proxy (/api), prod'da Render backend ishlatiladi.
+const DEFAULT_PROD_API = 'https://ing-backend.onrender.com/api'
+const API_BASE = (
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? DEFAULT_PROD_API : '/api')
+).replace(/\/$/, '')
 
 async function request(path, { method = 'GET', body } = {}) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
