@@ -25,21 +25,38 @@ def today_key(d: date | None = None) -> str:
     return WEEKDAY_KEYS[(d or date.today()).weekday()]
 
 
+APP_URL = "https://ing-eta.vercel.app/"
+
+
 def build_reminder(name: str, due_words: int, d: date | None = None) -> str:
     title, text = DAY_THEMES[today_key(d)]
     extra = f"\n📚 Bugun takrorlash kerak bo'lgan so'zlar: <b>{due_words}</b> ta." if due_words else ""
-    return f"⏰ <b>{name}, dars vaqting bo'ldi!</b>\n\n{title}\n{text}{extra}\n\n2 soat — va sen haftalik testga tayyor bo'lasan! 💪"
+    return (
+        f"⏰ <b>{name}, dars vaqting bo'ldi!</b>\n\n"
+        f"{title}\n"
+        f"{text}{extra}\n\n"
+        f"2 soat — va sen haftalik testga tayyor bo'lasan! 💪\n\n"
+        f"🔗 <b>Darsni boshlash:</b>\n{APP_URL}"
+    )
 
 
-async def send_telegram(chat_id: str, text: str) -> bool:
+async def send_telegram(chat_id: str, text: str, reply_markup: dict | None = None) -> bool:
     token = get_settings().telegram_bot_token
     if not token or not chat_id:
         return False
+    markup = reply_markup if reply_markup is not None else {
+        "inline_keyboard": [
+            [{"text": "🚀 Darsni boshlash", "url": APP_URL}]
+        ]
+    }
     try:
         async with httpx.AsyncClient(timeout=15) as client:
+            payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+            if markup:
+                payload["reply_markup"] = markup
             r = await client.post(
                 f"https://api.telegram.org/bot{token}/sendMessage",
-                json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"},
+                json=payload,
             )
         if r.status_code != 200:
             log.warning("Telegram xatosi: %s", r.text[:200])
